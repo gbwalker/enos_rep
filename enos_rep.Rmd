@@ -1,7 +1,5 @@
 ---
 title: "Causal effect of intergroup contact on exclusionary attitudes (replication)"
-# author: "Gabe Walker"
-# date: "February 18, 2019"
 output: pdf_document
 ---
 
@@ -17,6 +15,9 @@ library(xtable)
 library(RColorBrewer)
 library(stargazer)
 library(kableExtra)
+
+# Hide xtable comments.
+options(xtable.comment = FALSE)
 ```
 
 \begin{flushright}
@@ -28,12 +29,12 @@ February 20, 2018
 ```{r echo = FALSE, warning = FALSE, message = FALSE}
 ### Read in the CSV data.
 
-dat.all <- read.csv("pnas_data.csv")
-dat.t1 <- read.csv("t1_data.csv")
-dat.all.prime <- read.csv("prime_data.csv")
-dat.confed <- read.csv("confederate_face_data.csv")
-dat.hisp <- read.csv("hispanic_face_data.csv")
-dat.white <- read.csv("white_face_data.csv")
+dat.all <- read.csv("data/pnas_data.csv")
+dat.t1 <- read.csv("data/t1_data.csv")
+dat.all.prime <- read.csv("data/prime_data.csv")
+dat.confed <- read.csv("data/confederate_face_data.csv")
+dat.hisp <- read.csv("data/hispanic_face_data.csv")
+dat.white <- read.csv("data/white_face_data.csv")
 ```
 
 ```{r echo = FALSE, warning=FALSE, message=FALSE, results = 'asis'}
@@ -142,17 +143,6 @@ final.mat <- as.data.frame(final.mat)
 colnames(final.mat) <- c("variable", "subset", "N", "ate", "greater.p.value", "lesser.p.value", "x.sd", "x.mean")
 # print(final.mat)
 final.mat.main <- final.mat
-
-# A kable for later?
-# final.mat = as_tibble(final.mat)
-# colnames(final.mat) =
-# final.mat <- final.mat %>%
-#   mutate(ate = as.numeric(ate),
-#          greater.p.value = as.double(greater.p.value),
-#          lesser.p.value = as.double(lesser.p.value),
-#          x.sd = as.double(x.sd),
-#          x.mean = as.double(x.mean))
-# kable(final.mat, format = "markdown", digits = 4)
 ```
 
 
@@ -162,8 +152,7 @@ final.mat.main <- final.mat
 var.names <- c("Number of immigrants be increased?", "Children of undocumented be allowed to stay?", "English as official language?")
 
 # Dose response estimates comparison. Original code
-# reuses the final.mat variable and creates new subset
-# names.
+# reuses the final.mat variable and creates new subset names.
 final.mat <- matrix(nrow = 0, ncol = 8)
 subsets <- c("ta", "tb")
 
@@ -517,56 +506,41 @@ out.mat.a <- final.mat.redact[final.mat.redact$subset == "all" & final.mat.redac
 out.mat.a <- final.mat.redact[final.mat.redact$subset == "all" & final.mat.redact$variable %in% output.vars, c("ate.new")]
 out.mat.c <- final.mat.redact[final.mat.redact$subset == "no.car" & final.mat.redact$variable %in% output.vars, c("ate.new")]
 out.mat.x <- final.mat.redact[final.mat.redact$subset == "all" & final.mat.redact$variable %in% output.vars, c("x.mean.new")]
+
+# Add the N row (counts). Included a na.rm = TRUE
+# call, which was not there in the original replication code.
 Ns <- c(
-  "N", max(final.mat.redact$N[final.mat.redact$subset == "all"]),
-  max(final.mat.redact$N[final.mat.redact$subset == "no.car"]),
-  max(final.mat.redact$N[final.mat.redact$subset == "all"])
+  "n", max(final.mat.redact$N[final.mat.redact$subset == "all"], na.rm = TRUE),
+  max(final.mat.redact$N[final.mat.redact$subset == "no.car"], na.rm = TRUE),
+  max(final.mat.redact$N[final.mat.redact$subset == "all"], na.rm = TRUE)
 )
 
-h1 <- c("", paste("(", 1:3, ")", sep = ""))
-h2 <- c("", "all respondents", "waits on platform", "all respondents")
-h3 <- c("question", "ATE (p)", "CATE (p)", "T1 levels (sd)")
-hs <- rbind(h1, h2, h3)
+# Redo the heading portion of the table.
+# h1 <- c("", paste("(", 1:3, ")", sep = ""))
+# h2 <- c("", "all respondents", "waits on platform", "all respondents")
+# h3 <- c("question", "ATE (p)", "CATE (p)", "T1 levels (sd)")
+# hs <- rbind(h1, h2, h3)
+# row.names(hs) <- NULL
+hs <- c("", "ATE (P)", "CATE (P)", "T1 levels (SD)")
 row.names(hs) <- NULL
 
 out.mat <- cbind(out.mat.a, cbind(out.mat.c, out.mat.x))
 out.mat <- cbind(var.names, out.mat)
 out.mat <- rbind(out.mat, Ns)
+out.mat <- rbind(hs, out.mat)
 
-# out.mat <- rbind(hs, out.mat)
+# Make the final table.
+out.table <- xtable(out.mat, digits = 3, caption = "Experiment results")
 
-out.table <- xtable(out.mat, digits = 3)
+# Add custom column names of the table.
+colnames(out.table) <- c("Question", "All respondents", "Waits on platform", "All respondents")
+
 print(out.table,
   # file = "cum_results_wide.tex",
-  floating = FALSE,
+  floating = TRUE,
   include.rownames = FALSE,
-  include.colnames = FALSE
+  include.colnames = TRUE
 )
-
-## prime results
-# out.mat.p <- final.mat.redact[final.mat.redact$subset == "all.prime" & final.mat.redact$variable %in% output.vars, c("ate.new")]
-# Ns <- c(
-#   "N", max(final.mat.redact$N[final.mat.redact$subset == "all.prime"]),
-#   max(final.mat.redact$N[final.mat.redact$subset == "all"])
-# )
-# 
-# h1 <- c("", paste("(", 1:2, ")", sep = ""))
-# h2 <- c("", "prime experiment", "all respondents")
-# h3 <- c("question", "ATE (p)", "ATE (p)")
-# hs <- rbind(h1, h2, h3)
-# row.names(hs) <- NULL
-# 
-# out.mat <- cbind(out.mat.p, out.mat.a)
-# out.mat <- cbind(var.names, out.mat)
-# out.mat <- rbind(out.mat, Ns)
-# # out.mat <- rbind(hs, out.mat)
-# out.table <- xtable(out.mat, digits = 3)
-# print(out.table,
-#   # file = "prime_results_wide.tex",
-#   floating = FALSE,
-#   include.rownames = FALSE,
-#   include.colnames = FALSE
-# )
 ```
 
 ```{r echo = FALSE, warning=FALSE, message=FALSE, results = 'asis'}
@@ -578,13 +552,17 @@ print(out.table,
 out.balance.test <- xBalance(fmla = treatment ~ liberal + republican + obama.disapprove + ride.everyday + voted.2010 + romney.voter + Hispanics.x + age + residency.new + hispanic.new + college + income.new + male + white, data = dat.all, report = c("std.diffs", "z.scores", "adj.means", "chisquare.test"), strata = factor(dat.all$station))
 
 # Save the table with center alignment.
-xtable.out.balance.text <- xtable(out.balance.test, caption = "Difference in means between the two samples", digits = 2)
+xtable.out.balance.text <- xtable(out.balance.test, caption = "Covariate balance across treatment conditions", digits = 2)
+
+# Add custom column names of the table.
+colnames(xtable.out.balance.text) <- c("Control", "Treatment", "Standard difference", "Z score", "")
 
 # Print a LaTeX table, but not
 # to an external file.
 print(xtable.out.balance.text,
   # file = "balance_table.tex",
-  floating = FALSE
+  floating = TRUE,
+  include.colnames = TRUE
 )
 
 # Other balance tests below.
@@ -594,6 +572,16 @@ missing.balance.test <- xBalance(fmla = missing ~ numberim + Remain + Englishlan
 
 missing.balance.test <- xBalance(fmla = missing ~ treatment, data = dat.t1, report = c("std.diffs", "z.scores", "adj.means", "chisquare.test"), na.rm = T)
 ```
+
+```{r echo = FALSE, warning = FALSE, message = FALSE, results = 'asis'}
+### Table 3
+
+# The variables below might be of use.
+# df$treatment == 1,0
+# df$time.treatment == b,a
+# df$assignment == four values
+```
+
 
 ```{r echo = FALSE, warning = FALSE, message = FALSE, results = 'asis'}
 ### Graphics
